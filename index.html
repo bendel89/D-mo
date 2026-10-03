@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TikTok oEmbed + Thumbnail</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    input, button { padding: 10px; font-size: 16px; }
+    input { width: 100%; margin-bottom: 10px; box-sizing: border-box; }
+    button { background: #fe2c55; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    #result { margin-top: 30px; }
+    img { max-width: 100%; border-radius: 12px; margin-top: 15px; }
+    pre { background: #f4f4f4; padding: 15px; overflow-x: auto; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>TikTok oEmbed – Extraire l’image</h1>
+  
+  <input type="text" id="tiktokUrl" placeholder="Colle ici l’URL d’une vidéo TikTok" 
+         value="https://www.tiktok.com/@scout2015/video/6718335390845095173">
+  <button onclick="fetchOembed()">Récupérer l’image</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function fetchOembed() {
+      const url = document.getElementById('tiktokUrl').value.trim();
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Chargement...';
+
+      if (!url) {
+        resultDiv.innerHTML = 'Mets une URL TikTok !';
+        return;
+      }
+
+      try {
+        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+        const response = await fetch(oembedUrl);
+        const jsonString = await response.text();
+        const data = JSON.parse(jsonString);
+
+        // Méthode 1 : avec JSON.parse (recommandé)
+        const imageUrl = data.thumbnail_url;
+
+        // Méthode 2 : avec regex (si tu veux vraiment)
+        // const match = jsonString.match(/"thumbnail_url"\s*:\s*"([^"]+)"/);
+        // const imageUrl = match ? match[1] : null;
+
+        resultDiv.innerHTML = `
+          <h3>Résultat</h3>
+          <p><strong>Titre :</strong> ${data.title || '—'}</p>
+          <p><strong>Auteur :</strong> ${data.author_name || '—'}</p>
+          <p><strong>URL de l’image :</strong></p>
+          <pre>${imageUrl}</pre>
+          ${imageUrl ? `<img src="${imageUrl}" alt="Thumbnail TikTok">` : '<p>Aucune image trouvée</p>'}
+        `;
+      } catch (err) {
+        resultDiv.innerHTML = `<p style="color:red">Erreur : ${err.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
