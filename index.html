@@ -3,61 +3,687 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TikTok oEmbed + Thumbnail</title>
+  <title>TikTok oEmbed Ultimate Tool</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
-    input, button { padding: 10px; font-size: 16px; }
-    input { width: 100%; margin-bottom: 10px; box-sizing: border-box; }
-    button { background: #fe2c55; color: white; border: none; border-radius: 6px; cursor: pointer; }
-    #result { margin-top: 30px; }
-    img { max-width: 100%; border-radius: 12px; margin-top: 15px; }
-    pre { background: #f4f4f4; padding: 15px; overflow-x: auto; border-radius: 8px; }
+    :root {
+      --primary: #fe2c55;
+      --primary-dark: #e0254a;
+      --bg: #0f0f0f;
+      --card: #1a1a1a;
+      --text: #ffffff;
+      --muted: #aaaaaa;
+      --border: #333;
+      --success: #25d366;
+      --danger: #ff4757;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #fe2c55, #25f4ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--muted); margin-bottom: 25px; font-size: 0.95rem; }
+    
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    input[type="text"], textarea, select {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #111;
+      color: var(--text);
+      font-size: 15px;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    textarea { min-height: 80px; resize: vertical; width: 100%; }
+    
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #333; color: white; }
+    .btn-secondary:hover { background: #444; }
+    .btn-success { background: var(--success); color: #000; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    
+    .history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .history-item {
+      background: #222;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .history-item:hover { border-color: var(--primary); }
+    
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 700px) {
+      .result-grid { grid-template-columns: 1fr; }
+    }
+    
+    .thumbnail-box {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #111;
+      aspect-ratio: 9/16;
+      max-height: 500px;
+    }
+    .thumbnail-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .thumbnail-actions {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+      padding: 40px 12px 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .thumbnail-box:hover .thumbnail-actions { opacity: 1; }
+    
+    .info-list { list-style: none; }
+    .info-list li {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      font-size: 14px;
+    }
+    .info-list li:last-child { border-bottom: none; }
+    .info-label { color: var(--muted); white-space: nowrap; }
+    .info-value {
+      text-align: right;
+      word-break: break-all;
+      max-width: 60%;
+    }
+    .copyable {
+      cursor: pointer;
+      color: #25f4ee;
+      text-decoration: underline;
+    }
+    .copyable:hover { opacity: 0.8; }
+    
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-success { background: rgba(37,211,102,0.2); color: var(--success); }
+    .badge-info { background: rgba(37,244,238,0.15); color: #25f4ee; }
+    
+    .json-box {
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 15px;
+      max-height: 300px;
+      overflow: auto;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .embed-preview {
+      background: #111;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
+      overflow: hidden;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      border: 1px solid var(--border);
+    }
+    .toast.show { opacity: 1; }
+    
+    .loading {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+    }
+    .tab.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .hidden { display: none !important; }
+    
+    .stats {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    
+    .dark-toggle {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      z-index: 100;
+    }
   </style>
 </head>
 <body>
-  <h1>TikTok oEmbed – Extraire l’image</h1>
-  
-  <input type="text" id="tiktokUrl" placeholder="Colle ici l’URL d’une vidéo TikTok" 
-         value="https://www.tiktok.com/@scout2015/video/6718335390845095173">
-  <button onclick="fetchOembed()">Récupérer l’image</button>
+  <div class="container">
+    <h1>TikTok oEmbed Ultimate</h1>
+    <p class="subtitle">Extracteur avancé de miniatures, métadonnées, embed & plus — 100% côté client</p>
 
-  <div id="result"></div>
+    <!-- Input -->
+    <div class="card">
+      <div class="input-group">
+        <input type="text" id="tiktokUrl" placeholder="Colle une ou plusieurs URLs TikTok (une par ligne ou séparées par des espaces)" 
+               value="https://www.tiktok.com/@scout2015/video/6718335390845095173">
+        <button class="btn btn-primary" id="fetchBtn" onclick="processUrls()">
+          <span id="btnText">Analyser</span>
+        </button>
+      </div>
+      
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="pasteFromClipboard()">📋 Coller</button>
+        <button class="btn btn-secondary" onclick="clearAll()">🗑 Tout effacer</button>
+        <button class="btn btn-secondary" onclick="exportJSON()">💾 Exporter JSON</button>
+        <button class="btn btn-secondary" onclick="copyAllImages()">🖼 Copier toutes les images</button>
+        <button class="btn btn-secondary" onclick="toggleBatchMode()">📦 Mode batch</button>
+      </div>
+
+      <div id="batchArea" class="hidden" style="margin-top:15px">
+        <textarea id="batchInput" placeholder="Colle plusieurs URLs TikTok (une par ligne)..."></textarea>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="processBatch()">Traiter le batch</button>
+        </div>
+      </div>
+
+      <div class="history" id="history"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="results"></div>
+
+    <!-- Raw JSON -->
+    <div class="card hidden" id="rawCard">
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('info')">Infos</button>
+        <button class="tab" onclick="showTab('json')">JSON brut</button>
+        <button class="tab" onclick="showTab('embed')">Code Embed</button>
+        <button class="tab" onclick="showTab('markdown')">Markdown</button>
+      </div>
+      
+      <div id="tab-info"></div>
+      <div id="tab-json" class="hidden">
+        <div class="json-box" id="rawJson"></div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="copyText(document.getElementById('rawJson').textContent)">Copier JSON</button>
+        </div>
+      </div>
+      <div id="tab-embed" class="hidden">
+        <div class="json-box" id="embedCode"></div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="copyText(document.getElementById('embedCode').textContent)">Copier le code</button>
+        </div>
+        <div class="embed-preview" id="embedPreview"></div>
+      </div>
+      <div id="tab-markdown" class="hidden">
+        <div class="json-box" id="markdownCode"></div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="copyText(document.getElementById('markdownCode').textContent)">Copier Markdown</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
 
   <script>
-    async function fetchOembed() {
-      const url = document.getElementById('tiktokUrl').value.trim();
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = 'Chargement...';
+    // ========== STATE ==========
+    let history = JSON.parse(localStorage.getItem('tiktok_history') || '[]');
+    let currentData = null;
+    let allResults = [];
+    let isBatch = false;
 
-      if (!url) {
-        resultDiv.innerHTML = 'Mets une URL TikTok !';
-        return;
+    // ========== INIT ==========
+    renderHistory();
+    document.getElementById('tiktokUrl').addEventListener('keydown', e => {
+      if (e.key === 'Enter') processUrls();
+    });
+
+    // ========== CORE ==========
+    async function processUrls() {
+      const input = document.getElementById('tiktokUrl').value.trim();
+      if (!input) return showToast('Colle au moins une URL');
+
+      const urls = extractUrls(input);
+      if (urls.length === 0) return showToast('Aucune URL TikTok valide trouvée');
+
+      setLoading(true);
+      allResults = [];
+
+      for (const url of urls) {
+        try {
+          const data = await fetchOembed(url);
+          allResults.push({ url, data, success: true });
+          addToHistory(url);
+        } catch (err) {
+          allResults.push({ url, error: err.message, success: false });
+        }
       }
 
-      try {
-        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
-        const response = await fetch(oembedUrl);
-        const jsonString = await response.text();
-        const data = JSON.parse(jsonString);
+      setLoading(false);
+      renderResults();
+      
+      if (allResults.length === 1 && allResults[0].success) {
+        currentData = allResults[0].data;
+        showRawCard(allResults[0]);
+      }
+    }
 
-        // Méthode 1 : avec JSON.parse (recommandé)
-        const imageUrl = data.thumbnail_url;
+    async function processBatch() {
+      const text = document.getElementById('batchInput').value.trim();
+      if (!text) return showToast('Zone batch vide');
+      document.getElementById('tiktokUrl').value = text;
+      await processUrls();
+    }
 
-        // Méthode 2 : avec regex (si tu veux vraiment)
-        // const match = jsonString.match(/"thumbnail_url"\s*:\s*"([^"]+)"/);
-        // const imageUrl = match ? match[1] : null;
+    function extractUrls(text) {
+      const regex = /https?:\/\/(?:www\.|vm\.|vt\.)?tiktok\.com\/[^\s]+/gi;
+      const matches = text.match(regex) || [];
+      // nettoyage des URLs
+      return [...new Set(matches.map(u => u.replace(/[.,;!?)]+$/, '')))];
+    }
 
-        resultDiv.innerHTML = `
-          <h3>Résultat</h3>
-          <p><strong>Titre :</strong> ${data.title || '—'}</p>
-          <p><strong>Auteur :</strong> ${data.author_name || '—'}</p>
-          <p><strong>URL de l’image :</strong></p>
-          <pre>${imageUrl}</pre>
-          ${imageUrl ? `<img src="${imageUrl}" alt="Thumbnail TikTok">` : '<p>Aucune image trouvée</p>'}
+    async function fetchOembed(url) {
+      const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+      const res = await fetch(oembedUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    // ========== RENDER ==========
+    function renderResults() {
+      const container = document.getElementById('results');
+      container.innerHTML = '';
+
+      allResults.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        if (!item.success) {
+          card.innerHTML = `
+            <h3 style="color:var(--danger)">❌ Erreur</h3>
+            <p style="margin:10px 0;word-break:break-all">${item.url}</p>
+            <p style="color:var(--muted)">${item.error}</p>
+          `;
+          container.appendChild(card);
+          return;
+        }
+
+        const d = item.data;
+        const thumb = d.thumbnail_url || '';
+        const title = d.title || 'Sans titre';
+        const author = d.author_name || 'Inconnu';
+        const authorUrl = d.author_url || '#';
+
+        card.innerHTML = `
+          <div class="result-grid">
+            <div>
+              <div class="thumbnail-box">
+                ${thumb ? `<img src="${thumb}" alt="Thumbnail" loading="lazy" id="img-${idx}">` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666">Pas d\'image</div>'}
+                <div class="thumbnail-actions">
+                  <button class="btn btn-success" onclick="downloadImage('${thumb}', '${sanitizeFilename(title)}')">⬇ Télécharger</button>
+                  <button class="btn btn-secondary" onclick="copyText('${thumb}')">📋 Copier URL</button>
+                  <button class="btn btn-secondary" onclick="openInNewTab('${thumb}')">↗ Ouvrir</button>
+                </div>
+              </div>
+              <div class="stats">
+                <span>📐 ${d.thumbnail_width || '?'}×${d.thumbnail_height || '?'}</span>
+                <span>📦 ${d.provider_name || 'TikTok'}</span>
+              </div>
+            </div>
+            
+            <div>
+              <h3 style="margin-bottom:12px;font-size:1.1rem">${escapeHtml(title)}</h3>
+              <ul class="info-list">
+                <li>
+                  <span class="info-label">Auteur</span>
+                  <span class="info-value">
+                    <a href="${authorUrl}" target="_blank" style="color:#25f4ee">${escapeHtml(author)}</a>
+                  </span>
+                </li>
+                <li>
+                  <span class="info-label">Type</span>
+                  <span class="info-value"><span class="badge badge-info">${d.type || 'video'}</span></span>
+                </li>
+                <li>
+                  <span class="info-label">ID vidéo</span>
+                  <span class="info-value copyable" onclick="copyText('${extractVideoId(item.url)}')">${extractVideoId(item.url) || '—'}</span>
+                </li>
+                <li>
+                  <span class="info-label">URL originale</span>
+                  <span class="info-value copyable" onclick="copyText('${item.url}')" style="font-size:12px">${shorten(item.url, 40)}</span>
+                </li>
+                <li>
+                  <span class="info-label">Thumbnail</span>
+                  <span class="info-value copyable" onclick="copyText('${thumb}')" style="font-size:12px">${shorten(thumb, 35)}</span>
+                </li>
+              </ul>
+              
+              <div class="btn-group" style="margin-top:15px">
+                <button class="btn btn-secondary" onclick="showDetails(${idx})">🔍 Détails complets</button>
+                <button class="btn btn-secondary" onclick="copyMarkdown(${idx})">📝 Markdown</button>
+                <button class="btn btn-secondary" onclick="copyEmbed(${idx})">💻 Embed</button>
+              </div>
+            </div>
+          </div>
         `;
-      } catch (err) {
-        resultDiv.innerHTML = `<p style="color:red">Erreur : ${err.message}</p>`;
-      }
+        container.appendChild(card);
+      });
+    }
+
+    function showDetails(idx) {
+      const item = allResults[idx];
+      if (!item.success) return;
+      currentData = item.data;
+      showRawCard(item);
+      document.getElementById('rawCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showRawCard(item) {
+      const d = item.data;
+      document.getElementById('rawCard').classList.remove('hidden');
+
+      // Info tab
+      document.getElementById('tab-info').innerHTML = `
+        <ul class="info-list">
+          ${Object.entries(d).map(([k, v]) => {
+            if (typeof v === 'object') return '';
+            return `<li>
+              <span class="info-label">${k}</span>
+              <span class="info-value copyable" onclick="copyText('${String(v).replace(/'/g, "\\'")}')">${escapeHtml(String(v).substring(0, 120))}${String(v).length > 120 ? '…' : ''}</span>
+            </li>`;
+          }).join('')}
+        </ul>
+      `;
+
+      // JSON
+      document.getElementById('rawJson').textContent = JSON.stringify(d, null, 2);
+
+      // Embed
+      const embedHtml = d.html || generateEmbed(item.url, d);
+      document.getElementById('embedCode').textContent = embedHtml;
+      document.getElementById('embedPreview').innerHTML = embedHtml;
+
+      // Markdown
+      const md = `![${d.title || 'TikTok'}](${d.thumbnail_url || ''})\n\n**${d.title || ''}**\n\nPar [${d.author_name || 'Auteur'}](${d.author_url || '#'})\n\n[Voir sur TikTok](${item.url})`;
+      document.getElementById('markdownCode').textContent = md;
+
+      showTab('info');
+    }
+
+    function generateEmbed(url, data) {
+      const id = extractVideoId(url);
+      return `<blockquote class="tiktok-embed" cite="${url}" data-video-id="${id}" style="max-width: 605px;min-width: 325px;">
+  <section>
+    <a target="_blank" title="@${data.author_unique_id || ''}" href="${data.author_url || url}">@${data.author_name || 'user'}</a>
+    <p>${data.title || ''}</p>
+  </section>
+</blockquote>
+<script async src="https://www.tiktok.com/embed.js"><\/script>`;
+    }
+
+    // ========== TABS ==========
+    function showTab(name) {
+      ['info', 'json', 'embed', 'markdown'].forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('hidden', t !== name);
+        document.querySelector(`.tab[onclick="showTab('${t}')"]`).classList.toggle('active', t === name);
+      });
+    }
+
+    // ========== HISTORY ==========
+    function addToHistory(url) {
+      history = history.filter(h => h !== url);
+      history.unshift(url);
+      if (history.length > 12) history.pop();
+      localStorage.setItem('tiktok_history', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const el = document.getElementById('history');
+      el.innerHTML = history.map(url => 
+        `<div class="history-item" onclick="loadHistory('${url.replace(/'/g, "\\'")}')" title="${url}">${shorten(url, 35)}</div>`
+      ).join('');
+    }
+
+    function loadHistory(url) {
+      document.getElementById('tiktokUrl').value = url;
+      processUrls();
+    }
+
+    // ========== UTILITIES ==========
+    function setLoading(on) {
+      const btn = document.getElementById('fetchBtn');
+      const text = document.getElementById('btnText');
+      btn.disabled = on;
+      text.innerHTML = on ? '<span class="loading"></span>' : 'Analyser';
+    }
+
+    function showToast(msg, duration = 2500) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => showToast('✅ Copié !')).catch(() => showToast('Échec copie'));
+    }
+
+    function downloadImage(url, filename) {
+      if (!url) return showToast('Pas d\'image');
+      fetch(url)
+        .then(r => r.blob())
+        .then(blob => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = (filename || 'tiktok-thumb') + '.jpg';
+          a.click();
+          URL.revokeObjectURL(a.href);
+          showToast('Téléchargement lancé');
+        })
+        .catch(() => {
+          // fallback
+          const a = document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.download = filename + '.jpg';
+          a.click();
+          showToast('Ouverture de l\'image (téléchargement manuel)');
+        });
+    }
+
+    function openInNewTab(url) {
+      window.open(url, '_blank');
+    }
+
+    function extractVideoId(url) {
+      const m = url.match(/video\/(\d+)/) || url.match(/\/v\/(\d+)/) || url.match(/(\d{15,})/);
+      return m ? m[1] : null;
+    }
+
+    function sanitizeFilename(str) {
+      return (str || 'tiktok').replace(/[^\w\s-]/g, '').substring(0, 40).trim() || 'tiktok';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function shorten(str, len) {
+      if (!str) return '';
+      return str.length > len ? str.substring(0, len) + '…' : str;
+    }
+
+    function pasteFromClipboard() {
+      navigator.clipboard.readText().then(text => {
+        document.getElementById('tiktokUrl').value = text;
+        showToast('Collé depuis le presse-papier');
+      }).catch(() => showToast('Impossible d\'accéder au presse-papier'));
+    }
+
+    function clearAll() {
+      document.getElementById('tiktokUrl').value = '';
+      document.getElementById('batchInput').value = '';
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('rawCard').classList.add('hidden');
+      allResults = [];
+      currentData = null;
+      showToast('Tout effacé');
+    }
+
+    function exportJSON() {
+      if (allResults.length === 0) return showToast('Rien à exporter');
+      const data = allResults.filter(r => r.success).map(r => r.data);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `tiktok-oembed-${Date.now()}.json`;
+      a.click();
+      showToast('JSON exporté');
+    }
+
+    function copyAllImages() {
+      const urls = allResults.filter(r => r.success && r.data.thumbnail_url).map(r => r.data.thumbnail_url);
+      if (urls.length === 0) return showToast('Aucune image');
+      copyText(urls.join('\n'));
+    }
+
+    function toggleBatchMode() {
+      const area = document.getElementById('batchArea');
+      area.classList.toggle('hidden');
+      isBatch = !area.classList.contains('hidden');
+    }
+
+    function copyMarkdown(idx) {
+      const item = allResults[idx];
+      if (!item?.success) return;
+      const d = item.data;
+      const md = `![${d.title || 'TikTok'}](${d.thumbnail_url || ''})\n\n**${d.title || ''}**\nPar [${d.author_name || ''}](${d.author_url || ''})\n\n[Voir la vidéo](${item.url})`;
+      copyText(md);
+    }
+
+    function copyEmbed(idx) {
+      const item = allResults[idx];
+      if (!item?.success) return;
+      const code = item.data.html || generateEmbed(item.url, item.data);
+      copyText(code);
     }
   </script>
 </body>
